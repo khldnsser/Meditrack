@@ -13,6 +13,9 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 def create_token(patient_id, email):
+    if SECRET_KEY is None:
+        raise ValueError("SECRET_KEY is not set in environment variables")
+    
     payload = {
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=4),
         'iat': datetime.datetime.utcnow(),
@@ -35,19 +38,28 @@ def register_patient():
             return jsonify({"error": "Email already registered"}), 400
 
         # Create new patient
-        new_patient = Patient(
-            name=data["name"],
-            phone_number=data["phone_number"],
-            email=data["email"],
-            password=data["password"]
-        )
+        try:
+            new_patient = Patient(
+                name=data["name"],
+                phone_number=data["phone_number"],
+                email=data["email"],
+                password=data["password"]
+            )
+        except Exception as e:
+            print(f"Error creating patient object: {str(e)}")
+            return jsonify({"error": f"Error creating patient: {str(e)}"}), 500
         
-        db.session.add(new_patient)
-        db.session.commit()
+        try:
+            db.session.add(new_patient)
+            db.session.commit()
+        except Exception as e:
+            print(f"Database error: {str(e)}")
+            db.session.rollback()
+            return jsonify({"error": f"Database error: {str(e)}"}), 500
         
         # Create token for immediate login
         token = create_token(new_patient.id, new_patient.email)
-        
+
         return jsonify({
             "message": "Registration successful",
             "patient": patient_schema.dump(new_patient),
@@ -56,7 +68,7 @@ def register_patient():
     except Exception as e:
         print(f"Error registering patient: {str(e)}")
         db.session.rollback()
-        return jsonify({"error": "Failed to register patient"}), 500
+        return jsonify({"error": f"Failed to register patient: {str(e)}"}), 500
 
 @patient_auth_bp.route('/loginpatient', methods=['POST'])
 def login_patient():

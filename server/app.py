@@ -25,12 +25,17 @@ CORS(app, supports_credentials=True)
 # Initialize rate limiting
 limiter = Limiter(app=app, key_func=get_remote_address)
 
-
 #register blueprints
 app.register_blueprint(hello_bp)
 app.register_blueprint(patient_auth_bp)
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print("Database tables created successfully!")
+        except Exception as e:
+            print(f"Error creating tables: {str(e)}")
+
+if __name__ == "__main__":
     app.run(debug=True)
