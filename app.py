@@ -5,7 +5,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from routes import hello_bp, patient_auth_bp
+from routes import hello_bp, patient_auth_bp, doctor_auth_bp
 
 
 load_dotenv()
@@ -28,6 +28,7 @@ limiter = Limiter(app=app, key_func=get_remote_address)
 #register blueprints
 app.register_blueprint(hello_bp)
 app.register_blueprint(patient_auth_bp)
+app.register_blueprint(doctor_auth_bp)
 
 if __name__ == "__main__":
     with app.app_context():
